@@ -33,22 +33,26 @@ td,th{padding:6px;border-bottom:1px solid var(--ln);text-align:left;white-space:
 #qr{display:flex;justify-content:center;margin:10px 0}
 @media print{body>*:not(#m2){display:none!important}#m2{position:static;background:none;display:block}#m2 .b,#m2 button{display:none}}
 </style></head><body>
-<header><div style="display:flex;align-items:center;gap:8px"><img id="lg" alt="" style="display:none;width:38px;height:38px;border-radius:50%;background:#fff;object-fit:cover"><h1 id="ttl">🙏 गणेश उत्सव मंडळ</h1></div><div><button class="s" style="color:#fff;border-color:#fff;display:none" onclick="abtn()" id="ab"></button> <button class="s" style="color:#fff;border-color:#fff" onclick="toggleView()" id="vb">सभासद दृश्य</button></div></header>
+<header><div style="display:flex;align-items:center;gap:8px"><img id="lg" alt="" style="display:none;width:38px;height:38px;border-radius:50%;background:#fff;object-fit:cover"><h1 id="ttl">🙏 गणेश उत्सव मंडळ</h1></div><div><button class="s" style="color:#fff;border-color:#fff;display:inline-block" onclick="abtn()" id="ab">🔒 अ‍ॅडमिन</button> <button class="s" style="color:#fff;border-color:#fff" onclick="toggleView()" id="vb">सभासद दृश्य</button></div></header>
 <nav id="nav"></nav><main id="app"></main>
 <div class="modal" id="m1"><div class="box"><h3>UPI QR कोड</h3><div id="qr"></div><div id="qi"></div><button class="b" onclick="cm()">बंद करा</button></div></div>
 <div class="modal" id="m2"><div class="box" id="m2b"></div></div>
 <script id="seed" type="application/json">{}</script>
 <script>
-// >>> Google Apps Script वेब ॲपची URL येथे टाका (Code.gs डिप्लॉय केल्यानंतर) <<<
-const API='';
+// >>> Google Apps Script वेब ॲपची URL येथे टाका <<<
+const API = 'https://script.google.com/macros/s/AKfycbzIq9pNSK6lDq1Kr-X0koW3v3T6UxTAd65T2rPTp4BbZ3PVsyawAb5L_hynA0oBbvzFuw/exec';
+
 let PIN='',syncMsg='',st=null;
 const K='ganeshMandal1';
 let db={r:[],e:[],b:[],m:[],ev:[],s:{name:'गणेश उत्सव मंडळ',upi:'',upn:''}};
 let seed={};try{seed=JSON.parse(document.getElementById('seed').textContent)||{}}catch(e){}
 if(seed.s)db=Object.assign(db,seed);
 function loadLocal(){try{const x=localStorage.getItem(K);if(x)db=Object.assign(db,JSON.parse(x))}catch(e){}}
-let tab='home',view=false,lock=false,dirty=false,A=null;
-if(API){view=true;lock=true}else if(window.claude&&claude.use){view=true;lock=true}else loadLocal();
+
+// बाय-डिफॉल्ट लॉक आणि फक्त पाहण्याचा (View-Only) मोड चालू राहील
+let tab='home',view=true,lock=true,dirty=false,A=null;
+if(!API) loadLocal();
+
 const T={home:'डॅशबोर्ड',rec:'पावती',exp:'खर्च',book:'पूजा बुकिंग',mem:'सभासद',evt:'कार्यक्रम',set:'सेटिंग'};
 const $=id=>document.getElementById(id),v=id=>$(id)?$(id).value.trim():'',n=id=>+v(id)||0;
 const rs=x=>'₹'+(+x||0).toLocaleString('en-IN'),tod=()=>new Date().toISOString().slice(0,10);
@@ -72,12 +76,11 @@ function render(){
  $('ttl').textContent=(db.s.logo?'':'🙏 ')+db.s.name;$('lg').style.display=db.s.logo?'block':'none';if(db.s.logo)$('lg').src=db.s.logo;document.title=db.s.name;$('vb').textContent=view?'संपादन दृश्य':'सभासद दृश्य';
  if(view&&!VT.includes(tab))tab='home';$('vb').style.display=lock?'none':'';const ks=view?VT:Object.keys(T);
  $('nav').innerHTML=ks.map(k=>`<button class="${k==tab?'on':''}" onclick="go('${k}')">${T[k]}</button>`).join('');
- $('ab').style.display=API?'':'none';$('ab').textContent=lock?'🔒 अ‍ॅडमिन':'🚪 बाहेर पडा';
+ $('ab').style.display='inline-block';$('ab').textContent=lock?'🔒 अ‍ॅडमिन':'🚪 बाहेर पडा';
  $('app').innerHTML=(API&&!lock&&syncMsg?`<p style="margin:0 0 8px;font-size:13px">${syncMsg}</p>`:'')+P[tab]();}
 const P={
 home(){const i=inc(),e=exs(),o=db.m.filter(x=>x.role&&x.role!='कार्यकर्ता');
- const pb=(!view&&A)?`<div class="card"><h3>सभासदांना दाखवा</h3>${dirty?'<p class="r">⚠ प्रकाशित न केलेले बदल आहेत</p>':''}<button class="b" onclick="pub()">📤 सभासदांसाठी अपडेट प्रकाशित करा</button></div>`:'';
- return pb+(db.pubAt?`<p style="color:var(--mu);font-size:13px;margin:0 0 8px">शेवटचे अद्यतन: ${esc(db.pubAt)}</p>`:'')+`<div class="grid">
+ return (db.pubAt?`<p style="color:var(--mu);font-size:13px;margin:0 0 8px">शेवटचे अद्यतन: ${esc(db.pubAt)}</p>`:'')+`<div class="grid">
  <div class="card stat"><b class="g">${rs(i)}</b><span>एकूण जमा</span></div>
  <div class="card stat"><b class="r">${rs(e)}</b><span>एकूण खर्च</span></div>
  <div class="card stat"><b>${rs(i-e)}</b><span>शिल्लक</span></div>
@@ -121,7 +124,7 @@ set(){return `<div class="card"><h3>मंडळाची माहिती</h3
  <input id="su" value="${esc(db.s.upi)}" placeholder="UPI ID (उदा. mandal@upi)"><input id="sp" value="${esc(db.s.upn)}" placeholder="UPI वरील नाव">
  <input id="sw" value="${esc(db.s.grp||'')}" placeholder="WhatsApp नंबर (सारांश पाठवण्यासाठी)" type="tel">
  <button class="b" onclick="saveSet()">जतन करा</button></div>
- <div class="card"><h3>📲 ॲप इन्स्टॉल करा</h3><p style="color:var(--mu);font-size:13px">मोबाईल: ब्राउझर मेनू → "Add to Home screen". संगणक: Chrome/Edge मध्ये पत्त्याजवळचे इन्स्टॉल चिन्ह. फाईल डाउनलोड करूनही थेट उघडता येते.</p><button class="b" id="ib" style="display:none" onclick="inst()">ॲप इन्स्टॉल करा</button><button class="b" onclick="dl()">ॲप फाईल डाउनलोड करा</button></div><div class="card"><h3>बॅकअप</h3><p style="color:var(--mu)">डेटा याच फोन/ब्राउझरमध्ये साठवला जातो. नियमित बॅकअप घ्या.</p>
+ <div class="card"><h3>📲 ॲप इन्स्टॉल करा</h3><p style="color:var(--mu);font-size:13px">मोबाईल: ब्राउझर मेनू → "Add to Home screen". संगणक: Chrome/Edge मध्ये पत्त्याजवळचे इन्स्टॉल चिन्ह.</p><button class="b" id="ib" style="display:none" onclick="inst()">ॲप इन्स्टॉल करा</button><button class="b" onclick="dl()">ॲप फाईल डाउनलोड करा</button></div><div class="card"><h3>बॅकअप</h3><p style="color:var(--mu)">डेटा याच फोन/ब्राउझरमध्ये साठवला जातो. नियमित बॅकअप घ्या.</p>
  <button class="b" onclick="bk()">बॅकअप डाउनलोड</button><input type="file" id="fi" accept=".json" onchange="rest(this)"></div>`}};
 function sortEv(){return db.ev.map((x,i)=>[x,i]).sort((a,b)=>a[0].d.localeCompare(b[0].d))}
 function nextEv(){const l=sortEv().filter(([x])=>x.d>=tod()).slice(0,4);return l.length?tbl(['तारीख','वेळ','काय','ठिकाण'],l.map(([x])=>[x.d,x.h||'',esc(x.t),esc(x.p)])):'अजून नोंद नाही'}
@@ -155,7 +158,6 @@ function setLogo(el){const f=el.files[0];if(!f)return;const im=new Image(),u=URL
 function dl(){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([build(false)],{type:'text/html'}));a.download='ganesh-mandal.html';a.click()}
 let dp=null;window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();dp=e;const b=$('ib');if(b)b.style.display='inline-block'});
 function inst(){if(dp){dp.prompt();dp=null}}
-if(db.s.name==='गणेश उत्सव मंडळ'&&!db.s.logo&&!db.r.length)tab='set';
 function bk(){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(db)],{type:'application/json'}));a.download='mandal-backup.json';a.click()}
 function rest(el){const f=el.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{db=JSON.parse(r.result);save()}catch(e){alert('फाईल चुकीची')}};r.readAsText(f)}
 function build(strip){const c=document.documentElement.cloneNode(true);
@@ -166,16 +168,14 @@ function build(strip){const c=document.documentElement.cloneNode(true);
  if(strip){d.r.forEach(x=>delete x.ph);d.b.forEach(x=>delete x.ph);d.m.forEach(x=>delete x.ph);delete d.s.grp}
  c.querySelector('#seed').textContent=JSON.stringify(d).replace(/</g,'\\u003c');
  return '<!DOCTYPE html>\n'+c.outerHTML}
-async function pub(){if(!A)return;db.pubAt=new Date().toLocaleString('mr-IN');
- try{await A.publish(build(true));dirty=false;try{localStorage.setItem(K,JSON.stringify(db))}catch(e){}}catch(e){if(!(e&&e.code==='conflict'))alert('प्रकाशित झाले नाही: '+((e&&(e.code||e.message))||e))}}
-async function boot(){try{const u=await claude.use('user');A=await claude.use('artifact');
- if(u&&u.canEdit&&u.canEdit()&&A){view=false;lock=false;loadLocal()}}catch(e){}render()}
+
 function abtn(){lock?adminLogin():adminOut()}
 async function apiPost(o){const r=await fetch(API,{method:'POST',body:JSON.stringify(o)});return r.json()}
 async function apiGet(){try{const r=await fetch(API+'?t='+Date.now());const d=await r.json();if(d&&d.s)db=Object.assign(db,d)}catch(e){}render()}
-async function adminLogin(){const p=prompt('अ‍ॅडमिन पिन टाका');if(!p)return;try{const d=await apiPost({a:'read',pin:p});if(d.err)return alert('चुकीचा पिन');PIN=p;if(d.data&&d.data.s)db=Object.assign(db,d.data);view=false;lock=false;syncMsg='';render()}catch(e){alert('कनेक्ट होत नाही, इंटरनेट/URL तपासा')}}
+async function adminLogin(){const p=prompt('अ‍ॅडमिन पिन टाका');if(!p)return;try{const d=await apiPost({a:'read',pin:p});if(d.err)return alert('चुकीचा पिन!');PIN=p;if(d.data&&d.data.s)db=Object.assign(db,d.data);view=false;lock=false;syncMsg='';render()}catch(e){alert('कनेक्ट होत नाही, इंटरनेट/URL तपासा')}}
 function adminOut(){PIN='';lock=true;view=true;apiGet()}
 function push(){clearTimeout(st);syncMsg='⏳ जतन होत आहे…';st=setTimeout(async()=>{try{const d=await apiPost({a:'save',pin:PIN,data:db});syncMsg=d.err?'❌ जतन झाले नाही':'✅ सर्वांसाठी जतन झाले '+new Date().toLocaleTimeString('mr-IN')}catch(e){syncMsg='❌ इंटरनेट तपासा'}render()},800)}
+
 render();
-if(API){apiGet();setInterval(()=>{if(lock)apiGet()},60000)}else if(lock)boot();
+if(API){apiGet();setInterval(()=>{if(lock)apiGet()},60000)}
 </script></body></html>
